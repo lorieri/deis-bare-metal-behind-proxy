@@ -1,0 +1,18 @@
+[Unit]
+Description=deis-builder
+
+[Service]
+EnvironmentFile=/etc/environment
+TimeoutStartSec=30m
+ExecStartPre=/bin/sh -c "docker inspect deis-builder-data >/dev/null 2>&1 || docker run --name deis-builder-data -v /var/lib/docker ubuntu-debootstrap:14.04 /bin/true"
+ExecStartPre=/bin/sh -c "IMAGE=`/etc/deis/bin/get_image /deis/builder` && docker history $IMAGE >/dev/null || docker pull $IMAGE"
+ExecStartPre=/bin/sh -c "docker inspect deis-builder >/dev/null && docker rm -f deis-builder || true"
+ExecStart=/bin/sh -c "(while true; do echo '+++ trying env injection' ; docker exec deis-builder bash -c \"sed -i 's/>/>\\nENV HTTP_PROXY http:\\/\\/$myproxyhost/' /app/slugbuilder/Dockerfile /app/slugrunner/Dockerfile\" && docker exec deis-builder bash -c \"sed -i 's/>/>\\nENV HTTPS_PROXY http:\\/\\/$myproxyhost/' /app/slugbuilder/Dockerfile /app/slugrunner/Dockerfile\" && docker exec deis-builder bash -c \"sed -i 's/>/>\\nENV http_proxy http:\\/\\/$myproxyhost/' /app/slugbuilder/Dockerfile /app/slugrunner/Dockerfile\" && docker exec deis-builder bash -c \"sed -i 's/>/>\\nENV https_proxy http:\\/\\/$myproxyhost/' /app/slugbuilder/Dockerfile /app/slugrunner/Dockerfile\" && break ; done)& IMAGE=`/etc/deis/bin/get_image /deis/builder` && docker run --name deis-builder --rm -p 2223:22 -e HTTP_PROXY=$HTTP_PROXY -e HTTPS_PROXY=$HTTPS_PROXY -e ALL_PROXY=$ALL_PROXY -e NO_PROXY=$NO_PROXY -e http_proxy=$HTTP_PROXY -e https_proxy=$HTTP_PROXY -e no_proxy=$NO_PROXY --volumes-from=deis-builder-data -e EXTERNAL_PORT=2223 -e HOST=$COREOS_PUBLIC_IPV4 --privileged $IMAGE"
+ExecStartPost=/bin/sh -c "echo 'Waiting for builder on 2223/tcp...' && until echo 'dummy-value' | ncat $COREOS_PUBLIC_IPV4 2223 >/dev/null 2>&1; do sleep 1; done"
+ExecStartPost=/bin/bash -c "nsenter --pid --uts --mount --ipc --net --target $(docker inspect --format='{{ .State.Pid }}' deis-builder) /usr/local/bin/push-images"
+ExecStopPost=-/usr/bin/docker rm -f deis-builder
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
