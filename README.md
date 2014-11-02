@@ -12,6 +12,8 @@
 ## Tips:
 
  * most confd parser erros are units waiting other units to activate
+ * if you run the user-data manually, do not forget to enable fleet.socket on all host, it is used by the controller
+  * `systemctl enable fleet.socket`
 
 ## How:
 
