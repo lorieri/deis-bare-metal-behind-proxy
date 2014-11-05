@@ -15,6 +15,7 @@
  * if you run the user-data manually, do not forget to enable fleet.socket on all host, it is used by the controller
   * `systemctl enable fleet.socket`
  * if you clone a host, change the file /etc/machine-id
+ * for java buildpack, if you put a settings.xml with proxy settings at your project root the slugbuilder will use it
 
 ## How:
 
@@ -23,3 +24,12 @@
   * copy _etc_environment to all hosts on /etc/environment
   * copy units to your ~/.deis/units/
  * run: deisctl install platform
+
+## Tested with
+ * https://github.com/deis/example-java-jetty.git (using a custom settings.xml)
+ * https://github.com/deis/example-nodejs-express
+ * https://github.com/deis/example-ruby-sinatra.git
+ * https://github.com/heroku/php-getting-started.git
+ * https://github.com/heroku/python-getting-started.git
+	
+		
