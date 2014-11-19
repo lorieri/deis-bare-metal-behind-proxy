@@ -4,6 +4,7 @@
 
  * tested on v0.15.0
  * python boto ignores no_proxy, database and registry can't use proxy, fails creating ceph bucket
+  * also means 'deis pull' will not work
  * changed units to use public ip
  * using docker exec to inject proxy into the builder slugs' Dockerfiles
  * _etc_environment is /etc/environment
